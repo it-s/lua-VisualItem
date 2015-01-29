@@ -1,9 +1,8 @@
 local _path = ...
-local Events = require(_path .. "Events")
+local Events = require(_path .. "Changes")
 local Item = {}
-local function DummyInterface ()
 
-function Item.extend (base)
+function Item.extend (base, Interface)
         
         local interface = VisualItemInterface or DummyInterface
         base = Events.extend(base);

@@ -1,34 +1,43 @@
-local _path = ...
-local MEvents = require(_path .. "lua-Events.Events")
-local Events = {}
+local Changes = {}
 
-function Events.extend (base)
-        
-        base = MEvents.extend(base);
+-- create private index
+local index = {}
 
-        local ProperEventName(property)
-        	return "on" .. property .. "Changed"
-    	end
+-- create metatable
+local mt = {
+  __index = function (t,k)
+    return index[t][k]   -- access the original table
+  end,
 
-        function base:onChanged(property, func)
-        	return self:addEventListener(ProperEventName(property), func)
-        end
+  __newindex = function (t,k,v)
+    local object = index[t]
+    local eventName = Changes.getEventNameFor(k)
+    local change = Changes.newChange(k, object[k] , v, object)
+    object[k] = v   -- update original table
+    object._EventsInterface.dispatchEvent(eventName, change, object)
+  end
+}
 
-        function base:changed(changes)
-        	return self:dispatchEvent(ProperEventName(changes.property), changes)
-        end
-
-        return base
+function Changes.newChange(property, old, new)
+    return {
+        target = target,
+        property = property,
+        time = os.time(),
+        old = old,
+        new = new
+    }
 end
 
-function Events.Change (property, old, new, parent)
-	return {
-		property = property,
-		old = old,
-		new = new,
-		time = os.time(),
-		parent = parent
-	}
+function Changes.getEventNameFor(property)
+    return "on" .. property .. "Changed"
 end
 
-return Events
+function Changes.track(object, Interface)    
+      object._EventsInterface = Interface
+      local proxy = {}
+      index[proxy] = object
+      setmetatable(proxy, mt)
+      return proxy
+end
+
+return Changes
